@@ -330,8 +330,8 @@ main{max-width:1180px;margin:auto;padding:0 14px 60px}
   <div class="header">
     <div class="headerBox">
       <div>
-        <h1>دليل كربوهيدرات الأطعمة ومعاملات السكري</h1>
-        <p>اختر حساب الطعام أو معاملات السكري.</p>
+        <h1 id="welcomeTitle">دليل كربوهيدرات الأطعمة ومعاملات السكري</h1>
+        <p id="welcomeNote">اختر حساب الطعام أو معاملات السكري.</p>
       </div>
       <div class="headerActions">
         <button type="button" class="secondary" id="custThemeToggle" aria-label="تبديل الوضع الليلي" title="الوضع الليلي/النهاري">🌙</button>
@@ -987,6 +987,7 @@ const uiState = new Map();          // itemKey -> {tab:'e'|'w', val:string}
 let editing = null, editingSection = null, editingImage = null;
 let codesCache = [];
 let codeSearchTerm = "";
+let customerName = state.customerName || "";
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 function persistBasket() { state.basket = basket; store.set(SKEY, state); }
@@ -1129,7 +1130,7 @@ function gsapCountTo(el, to) {
 function show(view) {
   ["loginView", "customerView", "adminView"].forEach(id => $(id).classList.add("hidden"));
   if (view === "login") { $("loginView").classList.remove("hidden"); animateLoginIn(); }
-  if (view === "customer") { $("customerView").classList.remove("hidden"); renderCats(); renderFoods(); animateViewIn($("customerView")); }
+  if (view === "customer") { $("customerView").classList.remove("hidden"); renderWelcome(); renderCats(); renderFoods(); animateViewIn($("customerView")); }
   if (view === "admin") { $("adminView").classList.remove("hidden"); renderAdmin(); refreshCodes(); refreshRequests(); animateViewIn($("adminView")); }
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -1162,6 +1163,9 @@ $("loginBtn").onclick = async () => {
       const { data, error } = await sb.rpc("redeem_license", { p_code: code, p_device_id: state.deviceId });
       if (error) return setMsg("loginMsg", "تعذر الاتصال بالخادم، حاول لاحقًا", "err");
       if (!data.ok) return setMsg("loginMsg", REDEEM_ERR[data.error] || "تعذر الدخول", "err");
+      /* الخادم يرجّع الاسم مع التحقق — نحفظه ليظهر في الترحيب.
+         لو كانت نسخة الدالة قديمة ولا ترجع الاسم، نبقى بلا اسم ولا ينكسر شيء. */
+      customerName = (data.name || "").trim();
     } else {
       const rec = state.codes.find(c => c.code === code);
       if (!rec) return setMsg("loginMsg", "رمز غير صحيح", "err");
@@ -1171,7 +1175,9 @@ $("loginBtn").onclick = async () => {
         if (rec.devices.length >= rec.limit) return setMsg("loginMsg", `تم بلوغ الحد المسموح (${rec.limit} أجهزة)`, "err");
         rec.devices.push(state.deviceId); persist();
       }
+      customerName = (rec.name || "").trim();
     }
+    state.customerName = customerName; store.set(SKEY, state);
     session = "customer";
     setMsg("loginMsg", "تم الدخول", "ok");
     show("customer");
@@ -1208,7 +1214,12 @@ $("adminLoginBtn").onclick = async () => {
 };
 $("adminPass").addEventListener("keydown", e => { if (e.key === "Enter") $("adminLoginBtn").click(); });
 $("adminPass2").addEventListener("keydown", e => { if (e.key === "Enter") $("adminLoginBtn").click(); });
-$("logoutBtn").onclick = () => { session = null; $("loginCode").value = ""; setMsg("loginMsg", "", ""); show("login"); };
+$("logoutBtn").onclick = () => {
+  session = null; $("loginCode").value = ""; setMsg("loginMsg", "", "");
+  /* نمسح الاسم عند الخروج حتى لا يُرحَّب بالعميل السابق لو شارك الجهاز مع غيره */
+  customerName = ""; state.customerName = ""; store.set(SKEY, state);
+  show("login");
+};
 $("adminExitBtn").onclick = () => { session = null; if (CLOUD) sb.auth.signOut(); show("login"); };
 
 function makeCode() {
@@ -1483,6 +1494,46 @@ function renderStats() {
   animateCount($("statTotal"), codesCache.length);
   animateCount($("statActive"), activeCodes);
   animateCount($("statInactive"), inactiveCodes);
+}
+
+/* ============================================================
+   رسالة الترحيب والتحفيز
+   ------------------------------------------------------------
+   ملاحظة مقصودة: الرسائل تشجيعية على الاستمرار والمتابعة فقط،
+   ولا تتضمن أي نصيحة علاجية أو وعود بنتائج صحية.
+   ============================================================ */
+const MOTIVATION = [
+  "متابعتك لحساب الكارب اليوم خطوة تستحق التقدير 💙",
+  "الاستمرار أهم من الكمال — كل حسبة صحيحة تقرّبك لهدفك",
+  "أنت أدرى الناس بجسمك، وهذا الدليل هنا ليسهّل عليك القرار",
+  "التحكم بالسكري رحلة يومية، وأنت تمشيها بثبات 👏",
+  "خذ وقتك في الحساب — الدقة اليوم راحة لك غدًا",
+  "كل يوم تحسب فيه بوعي هو استثمار في صحتك",
+  "لا تقسُ على نفسك لو اختلّت قراءة — المهم أنك مستمر",
+  "معرفتك بالكارب سلاحك الأقوى في إدارة سكرك 💪"
+];
+/* نختار رسالة ثابتة لكل يوم بدل عشوائية في كل فتح، حتى لا تتغير أمام العميل مع كل نقرة */
+function motivationOfDay() {
+  const day = Math.floor(Date.now() / 86400000);
+  return MOTIVATION[day % MOTIVATION.length];
+}
+function greetingByHour() {
+  const h = new Date().getHours();
+  if (h < 12) return "صباح الخير";
+  if (h < 17) return "مساء الخير";
+  return "مساء الخير";
+}
+/* نأخذ الاسم الأول فقط ليكون الترحيب طبيعيًا ("مرحبًا فهد" لا "مرحبًا فهد الحريصي") */
+function firstName(full) {
+  const t = String(full || "").trim().split(/\s+/)[0] || "";
+  return t.length > 20 ? t.slice(0, 20) : t;
+}
+function renderWelcome() {
+  const t = $("welcomeTitle"), n = $("welcomeNote");
+  if (!t || !n) return;
+  const fn = firstName(customerName);
+  t.textContent = fn ? `${greetingByHour()} ${fn} 👋` : "أهلًا بك في كارب";
+  n.textContent = motivationOfDay();
 }
 
 /* ============================================================
