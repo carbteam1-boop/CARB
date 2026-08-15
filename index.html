@@ -296,6 +296,12 @@ main{max-width:1180px;margin:auto;padding:0 14px 60px}
   .basketFab{width:56px;height:56px;border-radius:20px}
   .fabIcon{font-size:22px}
   .fabTotal{font-size:9px}
+  /* أهداف لمس أكبر على الجوال — الأصابع تحتاج ~44px لتضغط بدقة */
+  .fav{font-size:23px;padding:10px 12px;min-height:44px;min-width:44px}
+  .estAddBtn{padding:9px 14px;font-size:13.5px}
+  .ctabs button{padding:11px 8px}
+  .cat{padding:11px 16px}
+  .panel li{gap:10px}
 }
 .basketPanel{position:fixed;inset:0;background:#11273788;backdrop-filter:blur(7px);display:none;align-items:flex-end;justify-content:center;z-index:98;padding:0}
 .basketPanel.open{display:flex}
@@ -1586,10 +1592,13 @@ function renderBasketBar() {
     const w = fab.offsetWidth, h = fab.offsetHeight;
     x = Math.max(PAD, Math.min(x, window.innerWidth - w - PAD));
     y = Math.max(PAD, Math.min(y, window.innerHeight - h - PAD));
+    /* الترتيب مهم: في الاتجاه من اليمين لليسار يترجم inset-inline-end إلى left،
+       فلو ضبطناه بعد left ألغاه وخرجت الأيقونة عن مكانها. لذلك نصفّره أولًا. */
+    fab.style.insetInlineEnd = "auto";
+    fab.style.insetInlineStart = "auto";
+    fab.style.right = "auto";
     fab.style.left = x + "px";
     fab.style.top = y + "px";
-    fab.style.right = "auto";
-    fab.style.insetInlineEnd = "auto";
     return { x, y };
   }
   function applySaved() {
@@ -2084,7 +2093,26 @@ $("resetBtn").onclick = () => {
        العميل عبر دالة get_catalog، والأدمن بعد تسجيل دخوله. */
   }
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    navigator.serviceWorker.register("sw.js").then(reg => {
+      /* عند اكتشاف نسخة أحدث نفعّلها ونحدّث الصفحة مرة واحدة،
+         حتى لا يبقى العميل على نسخة قديمة بعد رفع تحديث. */
+      reg.addEventListener("updatefound", () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener("statechange", () => {
+          if (nw.state === "installed" && navigator.serviceWorker.controller) {
+            nw.postMessage("SKIP_WAITING");
+          }
+        });
+      });
+      reg.update();
+    }).catch(() => {});
+    let reloadedOnce = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloadedOnce) return;      // حارس يمنع حلقة تحديث لا نهائية
+      reloadedOnce = true;
+      location.reload();
+    });
   }
   show("login");
 
