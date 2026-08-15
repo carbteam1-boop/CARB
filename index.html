@@ -250,52 +250,27 @@ main{max-width:1180px;margin:auto;padding:0 14px 60px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 /* ===== سلة الوجبة ===== */
-/* سلة عائمة قابلة للسحب: تتبع العميل أثناء التمرير (position:fixed)،
-   ويستطيع سحبها لأي مكان يناسبه فيُحفظ موضعه. */
-.basketFab{
-  position:fixed;top:45%;inset-inline-end:18px;z-index:60;
-  width:62px;height:62px;border-radius:22px;border:0;padding:0;
-  background:linear-gradient(140deg,var(--pl),var(--p) 45%,var(--p2));
-  color:#fff;display:grid;place-items:center;
-  box-shadow:0 10px 26px #27679966, 0 0 0 4px #ffffff2e inset;
-  animation:fabIn .4s var(--ease-bounce) both;
-  touch-action:none;                 /* حتى لا يتعارض السحب مع تمرير الصفحة */
-  transition:box-shadow .2s ease, transform .15s ease, border-radius .2s ease;
+/* عدّاد صغير داخل زر التبويب يوضح عدد أصناف السلة */
+.navCount{
+  display:inline-grid;place-items:center;min-width:23px;height:23px;padding:0 6px;
+  border-radius:999px;background:var(--danger);color:#fff;font-size:12px;font-weight:800;
+  margin-inline-start:6px;vertical-align:middle;
 }
-@keyframes fabIn{from{opacity:0;transform:scale(.5) rotate(-12deg)}to{opacity:1;transform:none}}
-.basketFab::after{                   /* حلقة نابضة تلفت الانتباه */
-  content:"";position:absolute;inset:-4px;border-radius:26px;
-  border:2px solid var(--p);opacity:.35;animation:fabRing 2.6s ease-out infinite;pointer-events:none;
+.nav button.on .navCount{background:#fff;color:var(--p2)}
+/* شريط الإجمالي: رقم ثابت أسفل التبويبات يراه العميل دائمًا */
+.totalStrip{
+  max-width:1180px;margin:0 auto 12px;padding:12px 18px;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;
+  border-radius:16px;box-shadow:0 8px 22px #27679940;
+  animation:fadeUp .3s var(--ease-bounce) both;font-weight:700;font-size:14px;
 }
-@keyframes fabRing{0%{transform:scale(1);opacity:.45}70%{transform:scale(1.25);opacity:0}100%{opacity:0}}
-.basketFab:hover{transform:scale(1.06);box-shadow:0 14px 32px #27679980, 0 0 0 4px #ffffff3d inset}
-.basketFab:active{transform:scale(.95)}
-.basketFab.bump{animation:pop .45s var(--ease-bounce)}
-.basketFab.dragging{cursor:grabbing;transform:scale(1.12) rotate(3deg);border-radius:26px;
-  box-shadow:0 20px 44px #27679999;transition:none}
-.basketFab.dragging::after{display:none}
-.fabIcon{font-size:25px;line-height:1;pointer-events:none}
-/* الإجمالي يظهر تحت الأيقونة مباشرة — معلومة مفيدة بلا حاجة لفتح السلة */
-.fabTotal{position:absolute;bottom:5px;inset-inline:0;font-size:9.5px;font-weight:800;opacity:.95;pointer-events:none}
-.fabText{position:absolute;inset-inline-end:72px;top:50%;transform:translateY(-50%) translateX(8px);
-  background:var(--surface);color:var(--ink);border:1px solid var(--line);
-  border-radius:12px;padding:7px 12px;white-space:nowrap;
-  box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease}
-.basketFab:hover .fabText{opacity:1;transform:translateY(-50%) translateX(0)}
-.basketFab.dragging .fabText{opacity:0}
-.fabTitle{display:block;font-size:12.5px;font-weight:800;color:var(--p2)}
-.fabSub{display:block;font-size:11.5px;color:var(--muted);font-weight:600}
-.fabCta{display:none}
-.fabBadge{
-  position:absolute;top:-6px;inset-inline-start:-6px;
-  background:var(--danger);color:#fff;font-size:12px;font-weight:800;
-  min-width:25px;height:25px;border-radius:999px;display:grid;place-items:center;
-  padding:0 6px;border:2.5px solid var(--surface);box-shadow:0 3px 9px #00000040;pointer-events:none;
-}
+.totalStrip b{font-size:26px;font-weight:800;line-height:1}
+.totalStripCount{margin-inline-start:auto;background:#ffffff26;border:1px solid #ffffff40;
+  border-radius:10px;padding:5px 11px;font-size:12.5px;font-weight:800}
 @media(max-width:620px){
-  .basketFab{width:56px;height:56px;border-radius:20px}
-  .fabIcon{font-size:22px}
-  .fabTotal{font-size:9px}
+  .totalStrip{margin-inline:14px;padding:11px 14px;font-size:13px}
+  .totalStrip b{font-size:22px}
   /* أهداف لمس أكبر على الجوال — الأصابع تحتاج ~44px لتضغط بدقة */
   .fav{font-size:23px;padding:10px 12px;min-height:44px;min-width:44px}
   .estAddBtn{padding:9px 14px;font-size:13.5px}
@@ -303,10 +278,6 @@ main{max-width:1180px;margin:auto;padding:0 14px 60px}
   .cat{padding:11px 16px}
   .panel li{gap:10px}
 }
-.basketPanel{position:fixed;inset:0;background:#11273788;backdrop-filter:blur(7px);display:none;align-items:flex-end;justify-content:center;z-index:98;padding:0}
-.basketPanel.open{display:flex}
-.basketCard{width:100%;max-width:640px;max-height:80vh;overflow:auto;background:var(--surface);border-radius:22px 22px 0 0;padding:18px;box-shadow:0 -20px 60px #102b3f45;animation:modalIn .3s var(--ease-bounce) both}
-@media(min-width:640px){.basketPanel{align-items:center;padding:12px}.basketCard{border-radius:22px;max-height:88vh}}
 .basketRow{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--line);padding:9px 0;animation:fadeUp .25s ease both}
 .basketRow .meta{margin-top:2px}
 .basketTotal{margin-top:14px;background:var(--soft);border-radius:14px;padding:14px;text-align:center}
@@ -327,7 +298,7 @@ main{max-width:1180px;margin:auto;padding:0 14px 60px}
   .headerBox{flex-direction:column;align-items:flex-start}
 }
 @media print{
-  .nav,.toolbar,.cats,.ctabs,.fav,.actions,.modal,.toast,.basketFab,.basketPanel{display:none!important}
+  .nav,.toolbar,.cats,.ctabs,.fav,.actions,.modal,.toast,.totalStrip{display:none!important}
   body{background:#fff;color:#16242d}.card,.box{box-shadow:none;break-inside:avoid}
 }
 @media(prefers-reduced-motion:reduce){
@@ -390,8 +361,16 @@ main{max-width:1180px;margin:auto;padding:0 14px 60px}
 
   <div class="nav">
     <button type="button" id="foodBtn" class="on">حساب الطعام</button>
+    <button type="button" id="basketBtn">🧺 سلة الوجبة <span class="navCount" id="basketCount">0</span></button>
     <button type="button" id="factorBtn">معاملات السكري</button>
     <button type="button" id="historyBtn">سجل الوجبات</button>
+  </div>
+  <!-- شريط الإجمالي: رقم ثابت يراه العميل دائمًا دون فتح أي شيء -->
+  <div class="totalStrip hidden" id="totalStrip">
+    <span>إجمالي سلة الوجبة</span>
+    <b id="basketTotalMini">0</b>
+    <span>جم كربوهيدرات</span>
+    <span class="totalStripCount" id="basketSummary">صنف واحد</span>
   </div>
 
   <div id="foodView">
@@ -406,15 +385,22 @@ main{max-width:1180px;margin:auto;padding:0 14px 60px}
       <div id="cats" class="cats"></div>
       <div id="foods"></div>
     </main>
-    <button type="button" class="basketFab hidden" id="openBasketBtn" aria-label="فتح سلة الوجبة">
-      <span class="fabIcon" aria-hidden="true">🧺</span>
-      <span class="fabTotal" id="basketTotalMini" aria-hidden="true">0 جم</span>
-      <span class="fabText">
-        <span class="fabTitle">سلة الوجبة</span>
-        <span class="fabSub" id="basketSummary">صنف واحد • 0 جم كارب</span>
-      </span>
-      <span class="fabBadge" id="basketCount">0</span>
-    </button>
+  </div>
+
+  <div id="basketView" class="hidden calc">
+    <div class="box">
+      <h2>سلة الوجبة</h2>
+      <div class="meta" style="margin-bottom:12px">الأصناف التي أضفتها لهذه الوجبة. احفظها في السجل عند الانتهاء.</div>
+      <div id="basketItems"></div>
+      <div class="basketTotal">
+        <span>إجمالي الكربوهيدرات</span>
+        <b id="basketTotalFull">0 جم</b>
+      </div>
+      <div class="actions" style="margin-top:14px;justify-content:flex-end">
+        <button type="button" class="secondary" id="basketClearBtn">إفراغ السلة</button>
+        <button type="button" class="primary" id="basketSaveBtn">حفظ في السجل</button>
+      </div>
+    </div>
   </div>
 
   <div id="historyView" class="hidden calc">
@@ -612,22 +598,6 @@ main{max-width:1180px;margin:auto;padding:0 14px 60px}
   </div>
 </div>
 
-<!-- ================= سلة الوجبة ================= -->
-<div id="basketPanel" class="basketPanel" role="dialog" aria-modal="true" aria-labelledby="basketTitle">
-  <div class="basketCard">
-    <h3 id="basketTitle" style="margin-top:0;color:var(--p2)">سلة الوجبة</h3>
-    <div id="basketItems"></div>
-    <div class="basketTotal">
-      <span>إجمالي الكربوهيدرات</span>
-      <b id="basketTotalFull">0 جم</b>
-    </div>
-    <div class="actions" style="margin-top:14px;justify-content:flex-end">
-      <button type="button" class="secondary" id="basketClearBtn">إفراغ السلة</button>
-      <button type="button" class="secondary" id="basketCloseBtn">إغلاق</button>
-      <button type="button" class="primary" id="basketSaveBtn">حفظ في السجل</button>
-    </div>
-  </div>
-</div>
 
 <!-- ================= نافذة تحديد الكمية ================= -->
 <div id="qtyModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="qtyModalTitle">
@@ -1548,97 +1518,41 @@ $("clearSearch").onclick = () => { $("search").value = ""; searchTerm = ""; rend
 
 function setCustomerTab(tab) {
   $("foodView").classList.toggle("hidden", tab !== "food");
+  $("basketView").classList.toggle("hidden", tab !== "basket");
   $("factorView").classList.toggle("hidden", tab !== "factor");
   $("historyView").classList.toggle("hidden", tab !== "history");
   $("foodBtn").classList.toggle("on", tab === "food");
+  $("basketBtn").classList.toggle("on", tab === "basket");
   $("factorBtn").classList.toggle("on", tab === "factor");
   $("historyBtn").classList.toggle("on", tab === "history");
   if (tab === "history") renderHistory();
+  if (tab === "basket") renderBasketPanel();
 }
 $("foodBtn").onclick = () => setCustomerTab("food");
+$("basketBtn").onclick = () => setCustomerTab("basket");
 $("factorBtn").onclick = () => setCustomerTab("factor");
 $("historyBtn").onclick = () => setCustomerTab("history");
 
 /* ============================================================
    سلة الوجبة وسجل الوجبات
    ============================================================ */
+/* يحدّث عدّاد التبويب وشريط الإجمالي الثابت.
+   لا توجد أيقونة عائمة — السلة تبويب ضمن الخيارات، والإجمالي رقم ظاهر دائمًا. */
 function renderBasketBar() {
-  const fab = $("openBasketBtn");
-  if (!basket.length) {
-    fab.classList.add("hidden");
-    document.body.classList.remove("hasBasket");
-    return;
-  }
-  fab.classList.remove("hidden");
-  document.body.classList.add("hasBasket");
   const n = basket.length;
+  const strip = $("totalStrip");
+  const countEl = $("basketCount");
   const total = fmtPrecise(basket.reduce((s, i) => s + i.carbs, 0));
+
+  countEl.textContent = n;
+  countEl.classList.toggle("hidden", n === 0);
+  strip.classList.toggle("hidden", n === 0);
+  if (!n) return;
+
   const unit = n === 1 ? "صنف واحد" : (n === 2 ? "صنفان" : (n <= 10 ? n + " أصناف" : n + " صنفًا"));
-  $("basketCount").textContent = n;
-  $("basketTotalMini").textContent = total + " جم";
-  $("basketSummary").textContent = `${unit} • ${total} جم كارب`;
-  fab.classList.remove("bump"); void fab.offsetWidth; fab.classList.add("bump");
+  $("basketTotalMini").textContent = total;
+  $("basketSummary").textContent = unit;
 }
-
-/* ---------- سحب أيقونة السلة وحفظ موضعها ----------
-   نميّز بين السحب والنقر بمسافة عتبة، حتى لا تُفتح السلة بالخطأ بعد التحريك. */
-(function makeBasketDraggable() {
-  const fab = $("openBasketBtn");
-  if (!fab) return;
-  const PAD = 10, THRESHOLD = 5;
-  let dragging = false, moved = false, startX = 0, startY = 0, offX = 0, offY = 0;
-
-  function clampAndPlace(x, y) {
-    const w = fab.offsetWidth, h = fab.offsetHeight;
-    x = Math.max(PAD, Math.min(x, window.innerWidth - w - PAD));
-    y = Math.max(PAD, Math.min(y, window.innerHeight - h - PAD));
-    /* الترتيب مهم: في الاتجاه من اليمين لليسار يترجم inset-inline-end إلى left،
-       فلو ضبطناه بعد left ألغاه وخرجت الأيقونة عن مكانها. لذلك نصفّره أولًا. */
-    fab.style.insetInlineEnd = "auto";
-    fab.style.insetInlineStart = "auto";
-    fab.style.right = "auto";
-    fab.style.left = x + "px";
-    fab.style.top = y + "px";
-    return { x, y };
-  }
-  function applySaved() {
-    const p = store.get("karb.fabPos", null);
-    if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) clampAndPlace(p.x, p.y);
-  }
-  fab.addEventListener("pointerdown", e => {
-    dragging = true; moved = false;
-    startX = e.clientX; startY = e.clientY;
-    const r = fab.getBoundingClientRect();
-    offX = e.clientX - r.left; offY = e.clientY - r.top;
-    fab.setPointerCapture(e.pointerId);
-  });
-  fab.addEventListener("pointermove", e => {
-    if (!dragging) return;
-    if (!moved && Math.hypot(e.clientX - startX, e.clientY - startY) > THRESHOLD) {
-      moved = true; fab.classList.add("dragging");
-    }
-    if (moved) clampAndPlace(e.clientX - offX, e.clientY - offY);
-  });
-  fab.addEventListener("pointerup", e => {
-    if (!dragging) return;
-    dragging = false;
-    fab.classList.remove("dragging");
-    if (moved) {
-      const r = fab.getBoundingClientRect();
-      store.set("karb.fabPos", { x: r.left, y: r.top });
-      toast("تم تثبيت مكان السلة");
-    } else {
-      openBasketPanel();          // نقرة عادية = فتح السلة
-    }
-    try { fab.releasePointerCapture(e.pointerId); } catch (_) {}
-  });
-  // أعِد ضبط الموضع لو تغيّر حجم النافذة حتى لا تختفي خارج الشاشة
-  window.addEventListener("resize", () => {
-    const r = fab.getBoundingClientRect();
-    if (fab.style.left) clampAndPlace(r.left, r.top);
-  });
-  applySaved();
-})();
 function renderBasketPanel() {
   const wrap = $("basketItems");
   wrap.innerHTML = !basket.length
@@ -1651,7 +1565,7 @@ function renderBasketPanel() {
           <button type="button" class="mini danger" data-bdel="${i}">حذف</button>
         </div>
       </div>`).join("");
-  $("basketTotalFull").innerHTML = ltr(fmt(basket.reduce((s, i) => s + i.carbs, 0))) + " جم";
+  $("basketTotalFull").innerHTML = ltr(fmtPrecise(basket.reduce((s, i) => s + i.carbs, 0))) + " جم";
 }
 function addToBasket(name, carbs, detail) {
   basket.push({ name, carbs, detail, at: Date.now() });
@@ -1718,11 +1632,6 @@ $("basketItems").addEventListener("click", e => {
   const b = e.target.closest("[data-bdel]"); if (!b) return;
   basket.splice(+b.dataset.bdel, 1); persistBasket(); renderBasketBar(); renderBasketPanel();
 });
-/* الفتح يتم من منطق السحب (نقرة بلا تحريك) وليس عبر onclick،
-   حتى لا تُفتح السلة عن طريق الخطأ بعد سحبها. */
-function openBasketPanel() { renderBasketPanel(); $("basketPanel").classList.add("open"); }
-$("basketCloseBtn").onclick = () => $("basketPanel").classList.remove("open");
-$("basketPanel").addEventListener("click", e => { if (e.target === $("basketPanel")) $("basketPanel").classList.remove("open"); });
 $("basketClearBtn").onclick = () => {
   if (!basket.length) return;
   if (!confirm("إفراغ السلة؟")) return;
@@ -1734,9 +1643,9 @@ $("basketSaveBtn").onclick = () => {
   state.mealHistory.unshift({ id: Date.now(), items: deepClone(basket), total, at: Date.now() });
   store.set(SKEY, state);
   basket = []; persistBasket(); renderBasketBar(); renderBasketPanel();
-  $("basketPanel").classList.remove("open");
   toast("تم حفظ الوجبة في السجل");
   renderHistory();
+  setCustomerTab("history");        // ننقله للسجل ليرى وجبته محفوظة
 };
 
 function renderHistory() {
