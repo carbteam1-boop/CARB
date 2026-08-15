@@ -239,21 +239,41 @@ main{max-width:1180px;margin:auto;padding:0 14px 60px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 /* ===== سلة الوجبة ===== */
+/* أيقونة السلة: ثابتة أعلى الشاشة (مثل سلة المتاجر) فتبقى في مجال نظر
+   العميل أثناء التصفح، ولا تغطي المحتوى أسفل الصفحة. */
 .basketFab{
-  position:fixed;bottom:22px;inset-inline-end:22px;z-index:40;
-  width:60px;height:60px;border-radius:50%;border:0;
+  position:fixed;top:14px;inset-inline-end:16px;z-index:60;
+  width:56px;height:56px;border-radius:50%;border:0;padding:0;
   background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;
-  display:grid;place-items:center;font-size:25px;
-  box-shadow:0 12px 28px #2767994f;animation:pop .35s var(--ease-bounce) both;
+  display:grid;place-items:center;
+  box-shadow:0 8px 22px #27679959;animation:fabIn .35s var(--ease-bounce) both;
 }
-.basketFab:hover{transform:translateY(-3px) scale(1.05);box-shadow:0 16px 34px #27679966}
-.basketFab.bump{animation:pop .3s var(--ease-bounce)}
-.basketFab:active{transform:translateY(0) scale(.96)}
+@keyframes fabIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+.basketFab:hover{transform:scale(1.08);box-shadow:0 12px 28px #27679975}
+.basketFab.bump{animation:pop .4s var(--ease-bounce)}
+.basketFab:active{transform:scale(.94)}
+.fabIcon{font-size:24px;line-height:1}
+/* النص المختصر يظهر كتلميح عند المرور فقط، حتى تبقى الأيقونة صغيرة ونظيفة */
+.fabText{position:absolute;inset-inline-end:64px;top:50%;transform:translateY(-50%) translateX(8px);
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);
+  border-radius:12px;padding:7px 12px;white-space:nowrap;
+  box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+.basketFab:hover .fabText{opacity:1;transform:translateY(-50%) translateX(0)}
+.fabTitle{display:block;font-size:12.5px;font-weight:800;color:var(--p2)}
+.fabSub{display:block;font-size:11.5px;color:var(--muted);font-weight:600}
+.fabCta{display:none}
 .fabBadge{
-  position:absolute;top:-4px;inset-inline-start:-4px;
+  position:absolute;top:-5px;inset-inline-start:-5px;
   background:var(--danger);color:#fff;font-size:12px;font-weight:800;
-  min-width:23px;height:23px;border-radius:999px;display:grid;place-items:center;
-  padding:0 5px;border:2px solid var(--bg);
+  min-width:24px;height:24px;border-radius:999px;display:grid;place-items:center;
+  padding:0 6px;border:2px solid var(--surface);box-shadow:0 3px 8px #00000035;
+}
+/* نبعد الترويسة قليلًا حتى لا تتداخل الأيقونة مع زر الخروج */
+body.hasBasket .headerBox{padding-inline-end:84px}
+@media(max-width:620px){
+  .basketFab{width:50px;height:50px;top:10px}
+  .fabIcon{font-size:21px}
+  body.hasBasket .headerBox{padding-inline-end:70px}
 }
 .basketPanel{position:fixed;inset:0;background:#11273788;backdrop-filter:blur(7px);display:none;align-items:flex-end;justify-content:center;z-index:98;padding:0}
 .basketPanel.open{display:flex}
@@ -359,7 +379,12 @@ main{max-width:1180px;margin:auto;padding:0 14px 60px}
       <div id="foods"></div>
     </main>
     <button type="button" class="basketFab hidden" id="openBasketBtn" aria-label="فتح سلة الوجبة">
-      <span aria-hidden="true">🧺</span>
+      <span class="fabIcon" aria-hidden="true">🧺</span>
+      <span class="fabText">
+        <span class="fabTitle">سلة الوجبة</span>
+        <span class="fabSub" id="basketSummary">صنف واحد • 0 جم كارب</span>
+      </span>
+      <span class="fabCta" aria-hidden="true">عرض السلة</span>
       <span class="fabBadge" id="basketCount">0</span>
     </button>
   </div>
@@ -637,287 +662,15 @@ const LOGO_SRC = "logo.png";
 const LOGO_SRC_DARK = "logo-dark.png";
 
 /* ============================================================
-   بيانات الدليل الافتراضية
+   قاعدة بيانات الأطعمة — محمية
+   ------------------------------------------------------------
+   ⚠️ لا تضع محتوى الأصناف هنا إطلاقًا.
+   المحتوى محفوظ في Supabase ولا يُحمَّل إلا بعد التحقق من رمز
+   العميل على الخادم. أي صنف يُكتب هنا يصبح مقروءًا لأي زائر
+   عبر «عرض مصدر الصفحة» — وهذا ما نتفاداه بالضبط.
+   للنسخة الاحتياطية استخدم زر «تصدير نسخة» من لوحة الإدارة.
    ============================================================ */
-const DEFAULT_CATALOG = [
-{"name":"الفواكه","icon":"🍎","items":[
- {"name":"العنب","estimate":["10–12 حبة = 15 كارب"],"weight":{"factor":0.17}},
- {"name":"الشمام","estimate":["كوب مكعبات (160 جم) = 13 كارب"],"weight":{"factor":0.08}},
- {"name":"البطيخ","estimate":["قطعة = 15 كارب"],"weight":{"factor":0.075}},
- {"name":"التفاح","estimate":["ثمرة متوسطة = 15 كارب"],"weight":{"factor":0.14}},
- {"name":"الموز","estimate":["ثمرة صغيرة أو نصف ثمرة كبيرة = 15 كارب"],"weight":{"factor":0.23}},
- {"name":"الفراولة","estimate":["4–5 حبات = 15 كارب"],"weight":{"factor":0.08}},
- {"name":"التين","estimate":["ثمرتان متوسطتان = 15 كارب"],"weight":{"factor":0.19}},
- {"name":"التوت","estimate":["كوب = 15 كارب"],"weight":{"factor":0.14}},
- {"name":"المشمش","estimate":["4 ثمرات صغيرة = 15 كارب"],"weight":{"factor":0.11}},
- {"name":"البرتقال","estimate":["ثمرة متوسطة = 15 كارب"],"weight":{"factor":0.125}},
- {"name":"الخوخ","estimate":["ثمرة متوسطة = 15 كارب"],"weight":{"factor":0.095}},
- {"name":"البرقوق","estimate":["ثمرتان متوسطتان = 15 كارب"],"weight":{"factor":0.114}},
- {"name":"الكرز","estimate":["10–12 حبة = 15 كارب"],"weight":{"factor":0.12}},
- {"name":"المانجو","estimate":["نصف ثمرة = 15 كارب"],"weight":{"factor":0.15}},
- {"name":"اليوسفي","estimate":["ثمرتان متوسطتان = 15 كارب"],"weight":{"factor":0.133}},
- {"name":"الحرنكش","estimate":["10 حبات (65 جم) = 7 كارب"],"weight":{"factor":0.11}},
- {"name":"التين الشوكي","estimate":["ثمرة متوسطة (100 جم) = 10 كارب"],"weight":{"factor":0.095}},
- {"name":"فاكهة التنين","estimate":["نصف ثمرة (150 جم) = 19 كارب"],"weight":{"factor":0.127}},
- {"name":"جوز الهند","estimate":["قطعة صغيرة (30 جم) = 5 كارب"],"weight":{"factor":0.15}},
- {"name":"الليتشي","estimate":["10 حبات (100 جم) = 17 كارب"],"weight":{"factor":0.17}},
- {"name":"الكمثرى","estimate":["ثمرة متوسطة = 15 كارب"],"weight":{"factor":0.154}},
- {"name":"الكيوي","estimate":["ثمرة متوسطة = 15 كارب"],"weight":{"factor":0.15}},
- {"name":"القشطة (الفاكهة)","estimate":["نصف ثمرة (100 جم) = 24 كارب"],"weight":{"factor":0.24}},
- {"name":"الأناناس","estimate":["نصف ثمرة = 15 كارب"],"weight":{"factor":0.13}},
- {"name":"الجوافة","estimate":["ثمرة متوسطة = 15 كارب"],"weight":{"factor":0.14}},
- {"name":"البابايا","estimate":["نصف ثمرة = 15 كارب"],"weight":{"factor":0.11}},
- {"name":"الكاكا","estimate":["ثمرة متوسطة (168 جم) = 32 كارب"],"weight":{"factor":0.19}},
- {"name":"الرمان","estimate":["نصف ثمرة = 15 كارب"],"weight":{"factor":0.19}},
- {"name":"التين المجفف","estimate":["حبتان (40 جم) = 26 كارب"],"weight":{"factor":0.64}},
- {"name":"الأفوكادو","estimate":["نصف ثمرة متوسطة (75 جم) = 7 كارب"],"weight":{"factor":0.09}},
- {"name":"الجريب فروت","estimate":["نصف ثمرة = 15 كارب"],"weight":{"factor":0.11}},
- {"name":"المشمش المجفف","estimate":["4–5 حبات (35 جم) = 22 كارب"],"weight":{"factor":0.63}},
- {"name":"القراصيا","estimate":["3 حبات (30 جم) = 19 كارب"],"weight":{"factor":0.64}},
- {"name":"الزبيب","estimate":["ملعقة طعام = 15 كارب"],"weight":null},
- {"name":"الفواكه المشكلة","estimate":["نصف كوب = 15 كارب"],"weight":null}]},
-
-{"name":"التمر","icon":"🌴","items":[
- {"name":"الرطب","estimate":["حبة متوسطة = 5 كارب"],"weight":{"factor":0.75}},
- {"name":"البرحي","estimate":["حبة متوسطة = 5 كارب"],"weight":{"factor":0.75}},
- {"name":"السكري","estimate":["حبة متوسطة = 7 كارب"],"weight":{"factor":0.75}},
- {"name":"المبروم","estimate":["حبة متوسطة = 7 كارب"],"weight":{"factor":0.75}},
- {"name":"العجوة","estimate":["حبة متوسطة = 7 كارب"],"weight":{"factor":0.75}},
- {"name":"الخلاص","estimate":["حبة متوسطة = 10 كارب"],"weight":{"factor":0.75}},
- {"name":"تمر مع دبس","estimate":["حبة متوسطة = 10 كارب"],"weight":{"factor":0.75}},
- {"name":"المجروش","estimate":["حبة متوسطة = 10 كارب"],"weight":{"factor":0.75}},
- {"name":"تمر محشي بالمكسرات أو الطحينة","estimate":["حبة متوسطة = 10 كارب"],"weight":{"factor":0.65}}]},
-
-{"name":"البطاطس","icon":"🥔","items":[
- {"name":"بطاطس مجمدة مقلية","estimate":["حصة صغيرة بكف اليد (85 جم) = 27 كارب"],"weight":{"factor":0.32}},
- {"name":"بطاطس مقلية في المنزل","estimate":["حصة متوسطة بكف اليد (85 جم) = 24 كارب"],"weight":{"factor":0.28}},
- {"name":"بطاطس مقلية جاهزة","estimate":["الحجم الصغير من وجبة سريعة (71 جم) = 29 كارب"],"weight":{"factor":0.41}},
- {"name":"بطاطس بوريه بالزبدة والحليب","estimate":["نصف كوب (105 جم) = 15 كارب"],"weight":{"factor":0.14}},
- {"name":"بطاطس مسلوقة","estimate":["حبة متوسطة (150 جم) = 32 كارب"],"weight":{"factor":0.21}},
- {"name":"بطاطس بالجبنة الشيدر","estimate":["نصف كوب (120 جم) = 29 كارب"],"weight":{"factor":0.24}},
- {"name":"بطاطس ودجز","estimate":["6–8 قطع (120 جم) = 31 كارب"],"weight":{"factor":0.26}},
- {"name":"بطاطس مشوية بالفرن","estimate":["حبة متوسطة بقشرها (170 جم) = 36 كارب"],"weight":{"factor":0.21}},
- {"name":"سلطة بطاطس","estimate":["نصف كوب (125 جم) = 14 كارب"],"weight":{"factor":0.11}},
- {"name":"شيبس بطاطس منزلي","estimate":["30 جم = 18 كارب"],"weight":null}]},
-
-{"name":"الأرز","icon":"🍚","items":[
- {"name":"أرز أبيض / مصري سادة","estimate":["ملعقة طعام = 2.5 كارب","ملعقة غرف (ملاس) = 7 كارب","كوب معياري = 45 كارب","نصف كوب = 22.5 كارب","ثلث كوب = 15 كارب","ربع كوب = 11 كارب"],"weight":{"factor":0.3}},
- {"name":"كبسة / مندي / كشري / مقلوبة / كابلي / برياني / مجدرة","estimate":["ملعقة طعام = 3.75–5 كارب","ملعقة غرف (ملاس) = 9 كارب","كوب معياري = 50 كارب","نصف كوب = 25 كارب","ثلث كوب = 17 كارب","ربع كوب = 13 كارب"],"weight":{"range":[0.35,0.38]}},
- {"name":"السليق","estimate":["ملعقة طعام = 3 كارب"],"weight":{"factor":0.2}},
- {"name":"أرز بالخضار وصلصة البشاميل","estimate":["ملعقة طعام = 3 كارب"],"weight":{"range":[0.2,0.25]}},
- {"name":"المنسف (الأرز مع الشراب)","estimate":["ملعقة طعام = 4 كارب"],"weight":{"factor":0.4}}]},
-
-{"name":"المكرونة","icon":"🍝","items":[
- {"name":"مكرونة سادة مسلوقة","estimate":["ملعقة طعام = 2 كارب"],"weight":{"factor":0.3}},
- {"name":"مكرونة حمراء بدون خضار","estimate":["ملعقة طعام ≈ 3 كارب"],"weight":{"factor":0.2}},
- {"name":"مكرونة حمراء مع خضار","estimate":["ملعقة طعام ≈ 3 كارب"],"weight":{"factor":0.15}},
- {"name":"مكرونة بيضاء / فيتوتشيني","estimate":["ملعقة طعام = 2 كارب"],"weight":{"factor":0.2}},
- {"name":"مكرونة بشاميل (اللحم أكثر من المكرونة)","estimate":["ملعقة طعام = 3 كارب"],"weight":{"factor":0.2}},
- {"name":"مكرونة بشاميل (اللحم أقل من المكرونة)","estimate":["ملعقة طعام = 3 كارب"],"weight":{"factor":0.25}},
- {"name":"لازانيا","estimate":["ملعقة طعام = 3 كارب"],"weight":{"factor":0.15}},
- {"name":"Pink Pasta (صوص أبيض وأحمر)","estimate":["ملعقة طعام = 3 كارب"],"weight":{"factor":0.2}},
- {"name":"سباغيتي","estimate":["ملعقة طعام = 3 كارب"],"weight":{"factor":0.2}},
- {"name":"مكرونة بصوص البيستو","estimate":["ملعقة طعام = 3 كارب"],"weight":{"factor":0.17}},
- {"name":"مكرونة سبانخ","estimate":["ملعقة طعام = 3 كارب"],"weight":{"factor":0.2}},
- {"name":"ماك آند تشيز / مكرونة أجبان","estimate":["ملعقة طعام = 3 كارب"],"weight":{"factor":0.17}},
- {"name":"مكرونة كينوا","estimate":["ملعقة طعام = 2 كارب"],"weight":{"factor":0.3}},
- {"name":"كانلوني بالحشوة والصلصة","estimate":["ملعقة طعام = 3 كارب"],"weight":{"factor":0.1}}]},
-
-{"name":"الخبز","icon":"🥖","items":[
- {"name":"خبز عربي أبيض أو بر","estimate":["حبة متوسطة = 35–40 كارب"],"weight":{"factor":0.5}},
- {"name":"توست أبيض أو بر","estimate":["شريحة = 15 كارب"],"weight":{"factor":0.5}},
- {"name":"صامولي","estimate":["حبة متوسطة = 30–35 كارب"],"weight":{"factor":0.5}},
- {"name":"خبز برجر","estimate":["حبة كاملة (طبقتان) = 30–35 كارب"],"weight":{"factor":0.5}},
- {"name":"خبز برجر بالبطاطس","estimate":["حبة كاملة = 35 كارب"],"weight":{"factor":0.5}},
- {"name":"بريوش","estimate":["حبة سميكة = 35–40 كارب"],"weight":{"factor":0.4}},
- {"name":"تميس","estimate":["قطعة مربعة بحجم شريحة التوست = 30 كارب"],"weight":{"factor":0.55}},
- {"name":"تورتيلا","estimate":["حبة متوسطة = 24 كارب"],"weight":{"factor":0.5}},
- {"name":"خبز سادة عمومًا","estimate":["شريحة متوسطة (30 جم) = 15 كارب"],"weight":{"factor":0.5}}]},
-
-{"name":"الفطاير والبيتزا والمعجنات","icon":"🥐","items":[
- {"name":"فطائر دجاج / لحم / تونة / جبنة / لبنة","estimate":["حبة بحجم باطن الكف = 12–15 كارب"],"weight":{"factor":0.3}},
- {"name":"فطائر زعتر","estimate":["مثلث متوسط = 9 كارب"],"weight":{"factor":0.3}},
- {"name":"فطائر سبانخ / خضار","estimate":["حبة بحجم الكف = 12–14 كارب"],"weight":{"factor":0.3}},
- {"name":"فطائر بطاطس / بازلاء / قرع","estimate":["حبة بحجم باطن الكف = 18–20 كارب"],"weight":{"factor":0.4}},
- {"name":"فطائر بدون حشوة","estimate":["حبة بحجم باطن الكف = 15–20 كارب"],"weight":{"factor":0.5}},
- {"name":"فطائر بيض","estimate":["حبة بحجم باطن الكف = 10 كارب"],"weight":{"factor":0.3}},
- {"name":"بيتزا رقيقة","estimate":["حبة بحجم باطن الكف = 8–10 كارب"],"weight":{"factor":0.3}},
- {"name":"بيتزا سميكة","estimate":["حبة بحجم باطن الكف = 12–15 كارب"],"weight":{"factor":0.35}}]},
-
-{"name":"الصواني","icon":"🍲","items":[
- {"name":"صينية شاورما (دجاج + بطاطس)","estimate":["كف اليد = 15 كارب"],"weight":{"factor":0.2}},
- {"name":"صينية توست (دجاج + خضار + صلصة)","estimate":["كف اليد = 20 كارب"],"weight":{"factor":0.25}},
- {"name":"صينية رز ودجاج وخضار بالبشاميل","estimate":["ملعقة طعام = 3 كارب"],"weight":{"factor":0.25}},
- {"name":"إيدام خضار","estimate":["كوب معياري = 10 كارب"],"weight":{"factor":0.1}},
- {"name":"خضار بالبشاميل","estimate":["كف اليد = 12 كارب"],"weight":{"factor":0.15}},
- {"name":"دجاج وخضار بالكريمة","estimate":["كف اليد = 10 كارب"],"weight":{"factor":0.1}},
- {"name":"رولات التوست","estimate":["حبة مع الصوص إن وجد = 17 كارب"],"weight":{"factor":0.25}},
- {"name":"بطاطس مع كريمة ودجاج","estimate":["كرة أو قطعة بحجم باطن الكف = 7–9 كارب"],"weight":{"factor":0.3}},
- {"name":"خضار مشوية","estimate":["كوب معياري = 7 كارب"],"weight":{"factor":0.05}}]},
-
-{"name":"السمبوسة والسبرنج رول","icon":"🥟","items":[
- {"name":"سمبوسة دجاج / لحم / جبنة / خضار بدون بطاطس وبازلاء","estimate":["صغيرة = 5 كارب","متوسطة = 7 كارب","كبيرة = 9 كارب"],"weight":{"factor":0.25}},
- {"name":"سمبوسة بطاطس / بازلاء / فلافل","estimate":["متوسطة = 8–10 كارب"],"weight":{"factor":0.35}},
- {"name":"سمبوسة جبنة مع شيرة أو عسل","estimate":["متوسطة = 12–15 كارب"],"weight":{"factor":0.4}},
- {"name":"سمبوسة مغطاة ببقسماط / شيبس / كورن فليكس","estimate":["متوسطة = 15 كارب"],"weight":{"factor":0.4}},
- {"name":"سمبوسة زعتر","estimate":["متوسطة = 7 كارب"],"weight":{"factor":0.25}},
- {"name":"سبرنج رول جبنة / خضار / دجاج / لحم","estimate":["الحبة = 7–9 كارب"],"weight":{"factor":0.25}},
- {"name":"سبرنج رول مع عسل أو شيرة","estimate":["الحبة = 12 كارب"],"weight":{"factor":0.4}},
- {"name":"سمبوسة أجبان مع ورقيات / فلفل / زيتون","estimate":["متوسطة = 7 كارب"],"weight":{"factor":0.25}}]},
-
-{"name":"المحاشي","icon":"🫑","items":[
- {"name":"ورق عنب","estimate":["حبة متوسطة = 5 كارب","إذا كانت الحبة كبيرة: +2 كارب تقريبًا"],"weight":{"factor":0.17}},
- {"name":"ملفوف محشي","estimate":["حبة متوسطة = 5 كارب","إذا كانت الحبة كبيرة: +2 كارب تقريبًا"],"weight":{"factor":0.12}},
- {"name":"كوسا محشي","estimate":["حبة متوسطة = 10 كارب","إذا كانت الحبة كبيرة: +2 كارب تقريبًا"],"weight":{"factor":0.1}},
- {"name":"باذنجان محشي","estimate":["حبة متوسطة = 10 كارب","إذا كانت الحبة كبيرة: +2 كارب تقريبًا"],"weight":{"factor":0.13}},
- {"name":"فلفل رومي محشي","estimate":["حبة متوسطة = 10 كارب","إذا كانت الحبة كبيرة: +2 كارب تقريبًا"],"weight":{"factor":0.1}},
- {"name":"طماطم محشية","estimate":["حبة متوسطة = 10–12 كارب","إذا كانت الحبة كبيرة: +2 كارب تقريبًا"],"weight":{"factor":0.15}},
- {"name":"بطاطس محشية","estimate":["حبة متوسطة = 25–30 كارب","إذا كانت الحبة كبيرة: +2 كارب تقريبًا"],"weight":{"factor":0.25}},
- {"name":"بصل محشي","estimate":["حبة متوسطة = 7 كارب"],"weight":{"factor":0.13}}]},
-
-{"name":"أطعمة متنوعة","icon":"🍽️","items":[
- {"name":"كبة مقلية / مشوية","estimate":["حبة متوسطة = 7 كارب"],"weight":{"factor":0.25}},
- {"name":"كبة بطاطس","estimate":["حبة متوسطة = 5–7 كارب"],"weight":{"factor":0.15}},
- {"name":"لقيمات بدون شيرة","estimate":["حبة = 5 كارب"],"weight":{"factor":0.3}},
- {"name":"لقيمات مع شيرة","estimate":["حبة = 7–9 كارب"],"weight":{"factor":0.45}},
- {"name":"فلافل","estimate":["حبة = 5 كارب"],"weight":{"factor":0.2}},
- {"name":"يغمش / فرموزة","estimate":["حبة متوسطة = 7 كارب"],"weight":{"factor":0.25}},
- {"name":"منتو","estimate":["حبة متوسطة = 3–5 كارب"],"weight":{"factor":0.28}},
- {"name":"مطبق بيض / خضار / جبنة","estimate":["حبة متوسطة = 7 كارب"],"weight":{"factor":0.3}},
- {"name":"جيب التاجر جبنة وخيار","estimate":["حبة متوسطة = 15 كارب"],"weight":{"factor":0.4}},
- {"name":"جيب التاجر دجاج وجبنة وخس","estimate":["حبة متوسطة = 25 كارب"],"weight":{"factor":0.4}},
- {"name":"بف باستري دجاج / لحم / جبنة / خضار","estimate":["حبة متوسطة = 22 كارب"],"weight":{"factor":0.35}},
- {"name":"بف باستري مع شيرة / عسل / دبس","estimate":["حبة متوسطة = 9–12 كارب"],"weight":{"factor":0.4}},
- {"name":"كرواسون محشي","estimate":["حبة متوسطة = 30 كارب"],"weight":{"factor":0.4}},
- {"name":"كرات جبنة بالشعيرية الباكستانية والحليب المكثف","estimate":["حبة = 7–9 كارب"],"weight":{"factor":0.55}},
- {"name":"مسخن","estimate":["حبة متوسطة = 7 كارب"],"weight":null},
- {"name":"تورتيلا دجاج / جبنة / صوصات","estimate":["حبة = 25 كارب"],"weight":{"factor":0.35}},
- {"name":"شاورما دجاج / لحم","estimate":["حبة متوسطة = 30–35 كارب"],"weight":{"factor":0.25}},
- {"name":"بيتزا البطاطس","estimate":["حبة متوسطة = 20 كارب"],"weight":{"factor":0.25}},
- {"name":"بف دجاج / لحم / جبنة / خضار","estimate":["حبة متوسطة = 7 كارب"],"weight":{"factor":0.25}},
- {"name":"كرات البطاطس المقلية","estimate":["حبة متوسطة = 7 كارب"],"weight":{"factor":0.25}},
- {"name":"رولات جلاش دجاج / لحم","estimate":["حبة متوسطة = 10 كارب"],"weight":{"factor":0.4}}]},
-
-{"name":"خلية النحل","icon":"🍯","items":[
- {"name":"خلية النحل بدون إضافات حلوة","estimate":["الحبة = 5 كارب"],"weight":{"factor":0.4}},
- {"name":"خلية النحل مع إضافات حلوة","estimate":["الحبة = 10 كارب"],"weight":{"factor":0.55}}]},
-
-{"name":"المصابيب","icon":"🥞","items":[
- {"name":"المصابيب","estimate":["حبة كبيرة بحجم الكف = 7 كارب","حبة متوسطة بحجم راحة اليد = 5 كارب","حبة صغيرة = 3 كارب","حبة صغيرة جدًا = 1 كارب"],"weight":{"factor":0.3}}]},
-
-{"name":"البرغل","icon":"🌾","items":[
- {"name":"البرغل الجاف","estimate":["ربع كوب جاف (45 جم) = 34 كارب"],"weight":{"factor":0.75}},
- {"name":"البرغل المطبوخ","estimate":["نصف كوب مطبوخ (90 جم) = 18 كارب"],"weight":{"factor":0.2}}]},
-
-{"name":"الشوربات","icon":"🥣","items":[
- {"name":"شوربة جريش / كويكر / شوفان","estimate":["كوب معياري = 25 كارب","ملعقة شوربة متوسطة = 5 كارب"],"weight":null},
- {"name":"شوربة عدس / فريكة","estimate":["كوب معياري = 25 كارب","ملعقة شوربة متوسطة = 5 كارب"],"weight":null},
- {"name":"شوربة طماطم بالكريمة","estimate":["كوب = 18 كارب","ملعقة شوربة = 3 كارب"],"weight":null},
- {"name":"شوربة مشروم بالكريمة","estimate":["كوب = 12 كارب","ملعقة شوربة = 2 كارب"],"weight":null},
- {"name":"شوربة خضار","estimate":["كوب = 15 كارب","ملعقة شوربة = 5 كارب"],"weight":null},
- {"name":"شوربة بروكلي / بصل","estimate":["كوب = 10 كارب","ملعقة شوربة = 2 كارب"],"weight":null},
- {"name":"شوربة لسان العصفور","estimate":["كوب = 20 كارب","ملعقة شوربة = 5 كارب"],"weight":null},
- {"name":"شوربة دجاج بالكريمة والذرة","estimate":["كوب = 20–25 كارب","ملعقة شوربة = 5 كارب"],"weight":null}]},
-
-{"name":"الحليب ومنتجاته","icon":"🥛","items":[
- {"name":"حليب سائل (قليل / كامل / خالي الدسم)","estimate":["كوب 240 مل = 12 كارب","كوب بلاستيك أبيض = 9 كارب"],"weight":{"factor":0.05}},
- {"name":"حليب مبخر","estimate":["ملعقة طعام = 1.5 كارب","عبوة صغيرة 15 جم = 1.5 كارب"],"weight":{"factor":0.1}},
- {"name":"حليب بودرة / مجفف","estimate":["ملعقة كبيرة = 6 كارب"],"weight":{"factor":0.4}},
- {"name":"حليب مكثف","estimate":["ملعقة طعام = 8 كارب","ملعقة صغيرة = 4 كارب"],"weight":{"factor":0.55}},
- {"name":"قشطة المراعي","estimate":["ملعقة طعام 15 جم = 0.6 كارب","العلبة 100 جم = 4 كارب","للمعرفة فقط ولا يشترط حسابها"],"weight":null}]},
-
-{"name":"المشروبات والعصائر","icon":"🧃","items":[
- {"name":"لاتيه وسط بدون سكر","estimate":["الحجم الوسط = 20 كارب"],"weight":null},
- {"name":"عصير ربيع","estimate":["250 مل = 30 كارب","125 مل = 15 كارب"],"weight":null},
- {"name":"موز بالحليب بدون سكر أو عسل","estimate":["كوب (240 مل) = 24 كارب"],"weight":{"factor":0.1}},
- {"name":"موز بالحليب مع سكر أو عسل","estimate":["كوب (240 مل) = 36 كارب"],"weight":{"factor":0.15}},
- {"name":"عصير فواكه طازج بدون سكر","estimate":["كوب بلاستيك أبيض = 15–20 كارب","كوب 250 مل = 25–30 كارب"],"weight":null},
- {"name":"عصير فواكه طازجة مشكلة بدون سكر","estimate":["كوب بلاستيك أبيض = 25 كارب","كوب 250 مل = 30–35 كارب"],"weight":null},
- {"name":"عصير مع حليب أو سكر","estimate":["كوب بلاستيك أبيض = 25–30 كارب","كوب 250 مل = 35–40 كارب"],"weight":null},
- {"name":"فيمتو بدون سكر","estimate":["180 مل = 25 كارب"],"weight":null},
- {"name":"تانج بدون سكر","estimate":["180 مل = 20 كارب"],"weight":null},
- {"name":"عصير برتقال أو تفاح طازج بدون سكر","estimate":["180 مل = 18 كارب"],"weight":null},
- {"name":"عصير مشكل بدون سكر","estimate":["180 مل = 20 كارب"],"weight":null},
- {"name":"عصير شمندر بدون سكر","estimate":["180 مل = 23 كارب"],"weight":null},
- {"name":"سوبيا","estimate":["180 مل = 30 كارب"],"weight":null},
- {"name":"قمر الدين","estimate":["180 مل = 25 كارب"],"weight":null},
- {"name":"العصائر المعلبة الجاهزة","estimate":["تُحسب من الملصق الغذائي: الوزن الصافي × الكربوهيدرات ÷ حجم الحصة"],"weight":null}]},
-
-{"name":"إضافات القهوة","icon":"☕","items":[
- {"name":"حليب طازج","estimate":["كوب = 12 كارب","كوب بلاستيك أبيض = 9 كارب"],"weight":{"factor":0.05}},
- {"name":"حليب مكثف","estimate":["ملعقة طعام = 8 كارب","ملعقة صغيرة = 4 كارب"],"weight":{"factor":0.55}},
- {"name":"حليب مبخر","estimate":["ملعقة طعام = 1.5 كارب","15 جم = 1.5 كارب"],"weight":{"factor":0.1}},
- {"name":"كراميل","estimate":["ملعقة طعام = 11 كارب"],"weight":{"factor":0.7}},
- {"name":"سكر أبيض","estimate":["ملعقة شاي = 3–5 كارب","ملعقة حلا = 7–10 كارب","ملعقة طعام = 15 كارب"],"weight":{"factor":1.0}},
- {"name":"شوكولاتة بيضاء","estimate":["ملعقة طعام = 9 كارب"],"weight":{"factor":0.59}},
- {"name":"كبسولات نسبريسو","estimate":["0 كارب"],"weight":null},
- {"name":"نسكافيه 3 في 1","estimate":["الظرف = 15 كارب"],"weight":null},
- {"name":"نسكافيه جولد / القهوة السوداء","estimate":["0 كارب"],"weight":null}]},
-
-{"name":"ساندويتش وفطيرة الفلافل","icon":"🥙","items":[
- {"name":"خبز عربي مفرود صغير","estimate":["الحبة = 15–20 كارب"],"weight":{"factor":0.5}},
- {"name":"خبز عربي مفرود متوسط","estimate":["الحبة = 30–40 كارب"],"weight":{"factor":0.5}},
- {"name":"خبز عربي مفرود كبير","estimate":["الحبة = 60 كارب"],"weight":{"factor":0.5}},
- {"name":"خبز صاج","estimate":["حسب الحجم = 30–45 كارب"],"weight":{"factor":0.5}},
- {"name":"فلافل","estimate":["الحبة = 5 كارب"],"weight":{"factor":0.2}},
- {"name":"حمص","estimate":["ملعقة طعام = 3 كارب"],"weight":null},
- {"name":"طحينة","estimate":["ملعقة طعام = 3 كارب"],"weight":{"factor":0.17}},
- {"name":"متبل","estimate":["ملعقة طعام = 2 كارب"],"weight":null},
- {"name":"كاتشب","estimate":["ملعقة طعام = 5 كارب"],"weight":null},
- {"name":"بطاطس مقلية أو مشوية","estimate":["عود واحد = 1 كارب"],"weight":null},
- {"name":"باذنجان","estimate":["3 أعواد = 1 كارب","ليس ضروريًا حسابها بحسب البيانات المعتمدة"],"weight":null},
- {"name":"مخلل","estimate":["3 أعواد = 1 كارب","ليس ضروريًا حسابها بحسب البيانات المعتمدة"],"weight":null},
- {"name":"سلطة","estimate":["حوالي 3 ملاعق = 2 كارب","ليس ضروريًا حسابها بحسب البيانات المعتمدة"],"weight":null}]},
-
-{"name":"الحلويات","icon":"🍰","items":[
- {"name":"معمول فستق","estimate":["حبة متوسطة = 9–12 كارب"],"weight":{"factor":0.5}},
- {"name":"معمول تمر","estimate":["حبة متوسطة = 9–12 كارب"],"weight":{"factor":0.65}},
- {"name":"معمول جوز","estimate":["حبة متوسطة = 9–12 كارب"],"weight":{"factor":0.45}},
- {"name":"جلي أحمر","estimate":["صحن بحجم باطن الكف = 15 كارب"],"weight":{"factor":0.15}},
- {"name":"كريم كراميل / مهلبية / كاسترد","estimate":["صحن بحجم باطن الكف = 25–30 كارب"],"weight":{"factor":0.25}},
- {"name":"بلح الشام / جبنية مع شيرة","estimate":["الحبة = 7–9 كارب"],"weight":{"factor":0.65}},
- {"name":"وربات مع شيرة","estimate":["الحبة = 20–25 كارب"],"weight":{"factor":0.5}},
- {"name":"قطايف مع شيرة","estimate":["الحبة = 15 كارب"],"weight":{"factor":0.4}},
- {"name":"أم علي","estimate":["ملعقة طعام = 5 كارب"],"weight":{"factor":0.35}},
- {"name":"براوني","estimate":["تعتمد على حجم القطعة"],"weight":{"range":[0.5,0.53]}},
- {"name":"كيكة ليمون بدون صوص","estimate":["شريحة متوسطة (70 جم) = 36 كارب"],"weight":{"factor":0.52}},
- {"name":"كيكة ليمون مع صوص","estimate":["شريحة متوسطة (70 جم) = 42 كارب"],"weight":{"factor":0.6}},
- {"name":"مفن / كيكة التوت بدون صوص","estimate":["حبة متوسطة (60 جم) = 22 كارب"],"weight":{"factor":0.37}},
- {"name":"كيك سادة","estimate":["شريحة متوسطة (70 جم) = 42–46 كارب"],"weight":{"range":[0.6,0.65]}},
- {"name":"كوكيز شوكولاتة","estimate":["حبة متوسطة (25 جم) = 18 كارب"],"weight":{"factor":0.7}},
- {"name":"سينابون بدون صوص","estimate":["حبة متوسطة (90 جم) = 45 كارب"],"weight":{"factor":0.5}},
- {"name":"سينابون مع صوص","estimate":["حبة متوسطة (90 جم) = 50 كارب"],"weight":{"factor":0.55}},
- {"name":"بسبوسة بدون صوص","estimate":["قطعة متوسطة (50 جم) = 25 كارب"],"weight":{"factor":0.5}},
- {"name":"بسبوسة مع صوص","estimate":["قطعة متوسطة (50 جم) = 30 كارب"],"weight":{"factor":0.6}},
- {"name":"كيكة تمر مع صوص","estimate":["شريحة متوسطة (70 جم) = 46–49 كارب"],"weight":{"range":[0.65,0.7]}},
- {"name":"كيكة جزر / شوفان بدون كاكاو أو صوص","estimate":["شريحة متوسطة (80 جم) = 16 كارب"],"weight":{"factor":0.2}},
- {"name":"كيكة جزر / شوفان مع كاكاو أو صوص","estimate":["شريحة متوسطة (80 جم) = 24 كارب"],"weight":{"factor":0.3}},
- {"name":"كيكة زعفران بدون صوص","estimate":["شريحة متوسطة (70 جم) = 39 كارب"],"weight":{"factor":0.56}},
- {"name":"كيكة زعفران مع صوص حالي","estimate":["شريحة متوسطة (70 جم) = 42 كارب"],"weight":{"factor":0.6}},
- {"name":"وافل بدون إضافات","estimate":["وافلة متوسطة (75 جم) = 25 كارب"],"weight":{"factor":0.33}},
- {"name":"وافل مع صوص حالي","estimate":["وافلة متوسطة (75 جم) = 34 كارب"],"weight":{"factor":0.45}},
- {"name":"وافل مع فراولة أو فواكه","estimate":["وافلة متوسطة (75 جم) = 23 كارب"],"weight":{"factor":0.3}},
- {"name":"بنز / ماما روتي بدون إضافات","estimate":["حبة متوسطة (60 جم) = 30 كارب"],"weight":{"factor":0.5}},
- {"name":"بنز / ماما روتي مع إضافات","estimate":["حبة متوسطة (60 جم) = 36 كارب"],"weight":{"factor":0.6}},
- {"name":"كيك بستاشيو مع التوت","estimate":["شريحة نحيفة = 5–7 كارب","شريحة سميكة = 15–20 كارب"],"weight":{"factor":0.7}}]},
-
-{"name":"المكسرات والبذور","icon":"🥜","items":[
- {"name":"البندق","estimate":["حفنة صغيرة (20 جم) = 3 كارب"],"weight":{"factor":0.17}},
- {"name":"اللوز","estimate":["حفنة صغيرة (20 جم) = 4 كارب"],"weight":{"factor":0.216}},
- {"name":"أبو فروة / الكستناء","estimate":["5 حبات متوسطة (50 جم) = 14 كارب"],"weight":{"factor":0.28}},
- {"name":"الفول السوداني","estimate":["حفنة صغيرة (20 جم) = 6 كارب"],"weight":{"factor":0.28}},
- {"name":"الفستق","estimate":["حفنة صغيرة (20 جم) = 6 كارب"],"weight":{"factor":0.28}},
- {"name":"الصنوبر","estimate":["ملعقة طعام (15 جم) = 2 كارب"],"weight":{"factor":0.13}},
- {"name":"الجوز / عين الجمل","estimate":["حفنة صغيرة (20 جم) = 3 كارب"],"weight":{"factor":0.14}},
- {"name":"المكسرات المشكلة","estimate":["حفنة صغيرة (20 جم) = 4 كارب"],"weight":{"factor":0.21}},
- {"name":"الحمص","estimate":["حفنة صغيرة (20 جم) = 12 كارب"],"weight":{"factor":0.61}},
- {"name":"الكاجو","estimate":["حفنة صغيرة (20 جم) = 7 كارب"],"weight":{"factor":0.33}},
- {"name":"اللب السوري","estimate":["حفنة صغيرة (20 جم) = 4 كارب"],"weight":{"factor":0.205}},
- {"name":"الذرة المحمصة","estimate":["حفنة صغيرة (20 جم) = 14 كارب"],"weight":{"factor":0.72}},
- {"name":"اللب الأسمر","estimate":["حفنة صغيرة (20 جم) = 3 كارب"],"weight":{"factor":0.15}},
- {"name":"اللب الأبيض","estimate":["حفنة صغيرة (20 جم) = 2 كارب"],"weight":{"factor":0.11}},
- {"name":"لب البطيخ","estimate":["حفنة صغيرة (20 جم) = 3 كارب"],"weight":{"factor":0.153}}]}
-];
+const DEFAULT_CATALOG = [];
 
 /* ============================================================
    كارب — منطق التطبيق (نسخة 2)
@@ -1166,6 +919,15 @@ $("loginBtn").onclick = async () => {
       /* الخادم يرجّع الاسم مع التحقق — نحفظه ليظهر في الترحيب.
          لو كانت نسخة الدالة قديمة ولا ترجع الاسم، نبقى بلا اسم ولا ينكسر شيء. */
       customerName = (data.name || "").trim();
+      /* المحتوى لا يُحمَّل إلا الآن — بعد أن أثبت الخادم صلاحية الرمز */
+      setMsg("loginMsg", "جارٍ تحميل الدليل...", "");
+      const got = await sb.rpc("get_catalog", { p_code: code, p_device_id: state.deviceId });
+      if (!got.error && got.data && got.data.ok && Array.isArray(got.data.catalog) && got.data.catalog.length) {
+        catalog = got.data.catalog;
+        state.catalog = catalog; state.customerCode = code; store.set(SKEY, state);
+      } else if (!catalog.length) {
+        return setMsg("loginMsg", "تعذّر تحميل الدليل — تأكد من اتصالك بالإنترنت", "err");
+      }
     } else {
       const rec = state.codes.find(c => c.code === code);
       if (!rec) return setMsg("loginMsg", "رمز غير صحيح", "err");
@@ -1204,7 +966,11 @@ $("adminLoginBtn").onclick = async () => {
         else if (m.includes("failed to fetch") || m.includes("network")) msg = "تعذّر الاتصال بالخادم — افتح الموقع عبر رابط http وليس ملفًا محليًا";
         return setMsg("adminMsg", msg, "err");
       }
-      session = "admin"; setMsg("adminMsg", "", ""); $("adminPass2").value = ""; show("admin");
+      session = "admin"; setMsg("adminMsg", "", ""); $("adminPass2").value = "";
+      /* الأدمن يقرأ الجدول مباشرة (سياسة is_admin) — نحمّله الآن بعد ثبوت هويته */
+      const ok = await loadCatalogFromCloud();
+      if (!ok) toast("تعذّر تحميل المحتوى من السحابة");
+      show("admin");
     } else {
       const v = String($("adminPass").value || "").trim();
       if (v && v === state.adminCode) { session = "admin"; setMsg("adminMsg", "", ""); $("adminPass").value = ""; show("admin"); }
@@ -1731,9 +1497,18 @@ $("historyBtn").onclick = () => setCustomerTab("history");
    ============================================================ */
 function renderBasketBar() {
   const fab = $("openBasketBtn");
-  if (!basket.length) { fab.classList.add("hidden"); return; }
+  if (!basket.length) {
+    fab.classList.add("hidden");
+    document.body.classList.remove("hasBasket");
+    return;
+  }
   fab.classList.remove("hidden");
-  $("basketCount").textContent = basket.length;
+  document.body.classList.add("hasBasket");
+  const n = basket.length;
+  const total = fmtPrecise(basket.reduce((s, i) => s + i.carbs, 0));
+  const unit = n === 1 ? "صنف واحد" : (n === 2 ? "صنفان" : (n <= 10 ? n + " أصناف" : n + " صنفًا"));
+  $("basketCount").textContent = n;
+  $("basketSummary").textContent = `${unit} • ${total} جم كارب`;
   fab.classList.remove("bump"); void fab.offsetWidth; fab.classList.add("bump");
 }
 function renderBasketPanel() {
@@ -1988,6 +1763,13 @@ async function loadCatalogFromCloud() {
 }
 async function pushCatalogToCloud() {
   if (!CLOUD) return;
+  /* حماية من فقدان البيانات: بعد نقل المحتوى للسحابة أصبح الجدول هو النسخة الوحيدة.
+     لو فشل تحميله لأي سبب (شبكة/صلاحية) يبقى catalog فارغًا، ورفعه عندها
+     يمسح قاعدة الأطعمة كاملة. لذلك نمنع رفع محتوى فارغ إلا بتأكيد صريح. */
+  if (!catalog.length) {
+    const sure = confirm("⚠️ المحتوى فارغ حاليًا. الرفع الآن سيمسح قاعدة الأطعمة من السحابة نهائيًا.\n\nهل أنت متأكد؟");
+    if (!sure) { toast("أُلغيت المزامنة — لم يتغير شيء"); return; }
+  }
   const { error } = await sb.from("catalog").upsert({ id: 1, data: catalog, updated_at: new Date().toISOString() });
   if (error) toast("تعذرت مزامنة المحتوى: " + error.message); else toast("تمت المزامنة مع السحابة");
 }
@@ -2177,8 +1959,8 @@ $("resetBtn").onclick = () => {
     $("adminAuthCloud").classList.remove("hidden");
     $("adminPasswordBox").classList.add("hidden");
     $("syncBtn").classList.remove("hidden");
-    const ok = await loadCatalogFromCloud();
-    if (!ok) toast("تعذر تحميل المحتوى من السحابة، تم استخدام النسخة المحلية");
+    /* لا نحمّل المحتوى هنا إطلاقًا — التحميل يتم بعد التحقق فقط:
+       العميل عبر دالة get_catalog، والأدمن بعد تسجيل دخوله. */
   }
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     navigator.serviceWorker.register("sw.js").catch(() => {});
