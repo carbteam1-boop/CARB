@@ -110,7 +110,18 @@ input:focus,textarea:focus,select:focus{border-color:var(--p);background:var(--s
 .headerBox{background:var(--surfacealpha);border:1px solid var(--line);border-radius:24px;padding:20px;box-shadow:var(--shadow);display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .headerBox h1{color:var(--p2);margin:0;font-size:clamp(22px,4vw,36px);line-height:1.4;font-weight:800}
 .headerBox p{color:var(--muted);margin:6px 0 0;font-size:14px}
-.headerActions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+/* الأزرار في صف مستقل أعلى الترويسة بدل جانب العنوان — يمنع تزاحمها
+   مع الترحيب ومع أيقونة السلة العائمة، ويبقيها في متناول الإبهام. */
+.headerActions{display:flex;gap:8px;align-items:center;order:1;width:100%;justify-content:flex-end}
+.headerMain{order:2;width:100%}
+/* أزرار أيقونية مضغوطة بدل أزرار نصية عريضة، فتترك مساحة أكبر للترحيب */
+.iconBtn{width:44px;height:44px;border-radius:13px;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink);font-size:18px;display:grid;place-items:center;flex:none}
+.iconBtn:hover{border-color:var(--p);color:var(--p);transform:translateY(-1px)}
+.iconBtn.danger{background:var(--surface);border-color:var(--line);color:var(--muted)}
+.iconBtn.danger:hover{background:#fff5f5;border-color:#ffd6d6;color:var(--danger)}
+:root[data-theme="dark"] .iconBtn.danger:hover{background:#3a1414;border-color:#5a2323}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .iconBtn.danger:hover{background:#3a1414;border-color:#5a2323}}
 .nav{max-width:1180px;margin:12px auto;padding:0 14px;display:flex;gap:9px;flex-wrap:wrap}
 .nav button{flex:1;min-width:170px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;color:var(--p2);font-weight:800}
 .nav button:hover{border-color:var(--p);transform:translateY(-1px)}
@@ -239,41 +250,52 @@ main{max-width:1180px;margin:auto;padding:0 14px 60px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 /* ===== سلة الوجبة ===== */
-/* أيقونة السلة: ثابتة أعلى الشاشة (مثل سلة المتاجر) فتبقى في مجال نظر
-   العميل أثناء التصفح، ولا تغطي المحتوى أسفل الصفحة. */
+/* سلة عائمة قابلة للسحب: تتبع العميل أثناء التمرير (position:fixed)،
+   ويستطيع سحبها لأي مكان يناسبه فيُحفظ موضعه. */
 .basketFab{
-  position:fixed;top:14px;inset-inline-end:16px;z-index:60;
-  width:56px;height:56px;border-radius:50%;border:0;padding:0;
-  background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;
-  display:grid;place-items:center;
-  box-shadow:0 8px 22px #27679959;animation:fabIn .35s var(--ease-bounce) both;
+  position:fixed;top:45%;inset-inline-end:18px;z-index:60;
+  width:62px;height:62px;border-radius:22px;border:0;padding:0;
+  background:linear-gradient(140deg,var(--pl),var(--p) 45%,var(--p2));
+  color:#fff;display:grid;place-items:center;
+  box-shadow:0 10px 26px #27679966, 0 0 0 4px #ffffff2e inset;
+  animation:fabIn .4s var(--ease-bounce) both;
+  touch-action:none;                 /* حتى لا يتعارض السحب مع تمرير الصفحة */
+  transition:box-shadow .2s ease, transform .15s ease, border-radius .2s ease;
 }
-@keyframes fabIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
-.basketFab:hover{transform:scale(1.08);box-shadow:0 12px 28px #27679975}
-.basketFab.bump{animation:pop .4s var(--ease-bounce)}
-.basketFab:active{transform:scale(.94)}
-.fabIcon{font-size:24px;line-height:1}
-/* النص المختصر يظهر كتلميح عند المرور فقط، حتى تبقى الأيقونة صغيرة ونظيفة */
-.fabText{position:absolute;inset-inline-end:64px;top:50%;transform:translateY(-50%) translateX(8px);
+@keyframes fabIn{from{opacity:0;transform:scale(.5) rotate(-12deg)}to{opacity:1;transform:none}}
+.basketFab::after{                   /* حلقة نابضة تلفت الانتباه */
+  content:"";position:absolute;inset:-4px;border-radius:26px;
+  border:2px solid var(--p);opacity:.35;animation:fabRing 2.6s ease-out infinite;pointer-events:none;
+}
+@keyframes fabRing{0%{transform:scale(1);opacity:.45}70%{transform:scale(1.25);opacity:0}100%{opacity:0}}
+.basketFab:hover{transform:scale(1.06);box-shadow:0 14px 32px #27679980, 0 0 0 4px #ffffff3d inset}
+.basketFab:active{transform:scale(.95)}
+.basketFab.bump{animation:pop .45s var(--ease-bounce)}
+.basketFab.dragging{cursor:grabbing;transform:scale(1.12) rotate(3deg);border-radius:26px;
+  box-shadow:0 20px 44px #27679999;transition:none}
+.basketFab.dragging::after{display:none}
+.fabIcon{font-size:25px;line-height:1;pointer-events:none}
+/* الإجمالي يظهر تحت الأيقونة مباشرة — معلومة مفيدة بلا حاجة لفتح السلة */
+.fabTotal{position:absolute;bottom:5px;inset-inline:0;font-size:9.5px;font-weight:800;opacity:.95;pointer-events:none}
+.fabText{position:absolute;inset-inline-end:72px;top:50%;transform:translateY(-50%) translateX(8px);
   background:var(--surface);color:var(--ink);border:1px solid var(--line);
   border-radius:12px;padding:7px 12px;white-space:nowrap;
   box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease}
 .basketFab:hover .fabText{opacity:1;transform:translateY(-50%) translateX(0)}
+.basketFab.dragging .fabText{opacity:0}
 .fabTitle{display:block;font-size:12.5px;font-weight:800;color:var(--p2)}
 .fabSub{display:block;font-size:11.5px;color:var(--muted);font-weight:600}
 .fabCta{display:none}
 .fabBadge{
-  position:absolute;top:-5px;inset-inline-start:-5px;
+  position:absolute;top:-6px;inset-inline-start:-6px;
   background:var(--danger);color:#fff;font-size:12px;font-weight:800;
-  min-width:24px;height:24px;border-radius:999px;display:grid;place-items:center;
-  padding:0 6px;border:2px solid var(--surface);box-shadow:0 3px 8px #00000035;
+  min-width:25px;height:25px;border-radius:999px;display:grid;place-items:center;
+  padding:0 6px;border:2.5px solid var(--surface);box-shadow:0 3px 9px #00000040;pointer-events:none;
 }
-/* نبعد الترويسة قليلًا حتى لا تتداخل الأيقونة مع زر الخروج */
-body.hasBasket .headerBox{padding-inline-end:84px}
 @media(max-width:620px){
-  .basketFab{width:50px;height:50px;top:10px}
-  .fabIcon{font-size:21px}
-  body.hasBasket .headerBox{padding-inline-end:70px}
+  .basketFab{width:56px;height:56px;border-radius:20px}
+  .fabIcon{font-size:22px}
+  .fabTotal{font-size:9px}
 }
 .basketPanel{position:fixed;inset:0;background:#11273788;backdrop-filter:blur(7px);display:none;align-items:flex-end;justify-content:center;z-index:98;padding:0}
 .basketPanel.open{display:flex}
@@ -349,13 +371,13 @@ body.hasBasket .headerBox{padding-inline-end:84px}
 <section id="customerView" class="page hidden">
   <div class="header">
     <div class="headerBox">
-      <div>
+      <div class="headerActions">
+        <button type="button" class="iconBtn" id="custThemeToggle" aria-label="تبديل الوضع الليلي" title="الوضع الليلي / النهاري">🌙</button>
+        <button type="button" class="iconBtn danger" id="logoutBtn" aria-label="تسجيل الخروج" title="تسجيل الخروج">⏻</button>
+      </div>
+      <div class="headerMain">
         <h1 id="welcomeTitle">دليل كربوهيدرات الأطعمة ومعاملات السكري</h1>
         <p id="welcomeNote">اختر حساب الطعام أو معاملات السكري.</p>
-      </div>
-      <div class="headerActions">
-        <button type="button" class="secondary" id="custThemeToggle" aria-label="تبديل الوضع الليلي" title="الوضع الليلي/النهاري">🌙</button>
-        <button type="button" class="secondary" id="logoutBtn">خروج</button>
       </div>
     </div>
   </div>
@@ -380,11 +402,11 @@ body.hasBasket .headerBox{padding-inline-end:84px}
     </main>
     <button type="button" class="basketFab hidden" id="openBasketBtn" aria-label="فتح سلة الوجبة">
       <span class="fabIcon" aria-hidden="true">🧺</span>
+      <span class="fabTotal" id="basketTotalMini" aria-hidden="true">0 جم</span>
       <span class="fabText">
         <span class="fabTitle">سلة الوجبة</span>
         <span class="fabSub" id="basketSummary">صنف واحد • 0 جم كارب</span>
       </span>
-      <span class="fabCta" aria-hidden="true">عرض السلة</span>
       <span class="fabBadge" id="basketCount">0</span>
     </button>
   </div>
@@ -947,6 +969,45 @@ $("loginBtn").onclick = async () => {
 };
 $("loginCode").addEventListener("keydown", e => { if (e.key === "Enter") $("loginBtn").click(); });
 
+/* دخول صامت برمز محفوظ — يُستخدم عند العودة للتطبيق.
+   يرجع true إن نجح، وfalse إن رُفض الرمز (موقوف/منتهٍ/محذوف) أو تعذّر الاتصال. */
+async function silentLogin(code) {
+  try {
+    if (CLOUD) {
+      const { data, error } = await sb.rpc("redeem_license", { p_code: code, p_device_id: state.deviceId });
+      if (error) {
+        /* انقطاع شبكة: لو عندنا محتوى محفوظ من جلسة سابقة ندخله ليعمل دون إنترنت */
+        if (state.catalog && state.catalog.length) {
+          catalog = state.catalog; customerName = state.customerName || "";
+          session = "customer"; show("customer");
+          toast("لا يوجد اتصال — تعرض النسخة المحفوظة");
+          return true;
+        }
+        return false;
+      }
+      if (!data.ok) return false;
+      customerName = (data.name || "").trim();
+      const got = await sb.rpc("get_catalog", { p_code: code, p_device_id: state.deviceId });
+      if (!got.error && got.data && got.data.ok && Array.isArray(got.data.catalog) && got.data.catalog.length) {
+        catalog = got.data.catalog; state.catalog = catalog;
+      } else if (state.catalog && state.catalog.length) {
+        catalog = state.catalog;               // نرجع للنسخة المحفوظة إن تعذّر التحديث
+      } else return false;
+    } else {
+      const rec = state.codes.find(c => c.code === code);
+      if (!rec || !rec.active) return false;
+      if (rec.expires && rec.expires < todayStr()) return false;
+      if (!rec.devices.includes(state.deviceId)) return false;
+      customerName = (rec.name || "").trim();
+    }
+    state.customerName = customerName; store.set(SKEY, state);
+    session = "customer";
+    setMsg("loginMsg", "", "");
+    show("customer");
+    return true;
+  } catch (e) { return false; }
+}
+
 $("toggleAdminBox").onclick = () => $("loginAdminBox").classList.toggle("on");
 $("adminLoginBtn").onclick = async () => {
   $("adminLoginBtn").disabled = true;
@@ -1508,9 +1569,67 @@ function renderBasketBar() {
   const total = fmtPrecise(basket.reduce((s, i) => s + i.carbs, 0));
   const unit = n === 1 ? "صنف واحد" : (n === 2 ? "صنفان" : (n <= 10 ? n + " أصناف" : n + " صنفًا"));
   $("basketCount").textContent = n;
+  $("basketTotalMini").textContent = total + " جم";
   $("basketSummary").textContent = `${unit} • ${total} جم كارب`;
   fab.classList.remove("bump"); void fab.offsetWidth; fab.classList.add("bump");
 }
+
+/* ---------- سحب أيقونة السلة وحفظ موضعها ----------
+   نميّز بين السحب والنقر بمسافة عتبة، حتى لا تُفتح السلة بالخطأ بعد التحريك. */
+(function makeBasketDraggable() {
+  const fab = $("openBasketBtn");
+  if (!fab) return;
+  const PAD = 10, THRESHOLD = 5;
+  let dragging = false, moved = false, startX = 0, startY = 0, offX = 0, offY = 0;
+
+  function clampAndPlace(x, y) {
+    const w = fab.offsetWidth, h = fab.offsetHeight;
+    x = Math.max(PAD, Math.min(x, window.innerWidth - w - PAD));
+    y = Math.max(PAD, Math.min(y, window.innerHeight - h - PAD));
+    fab.style.left = x + "px";
+    fab.style.top = y + "px";
+    fab.style.right = "auto";
+    fab.style.insetInlineEnd = "auto";
+    return { x, y };
+  }
+  function applySaved() {
+    const p = store.get("karb.fabPos", null);
+    if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) clampAndPlace(p.x, p.y);
+  }
+  fab.addEventListener("pointerdown", e => {
+    dragging = true; moved = false;
+    startX = e.clientX; startY = e.clientY;
+    const r = fab.getBoundingClientRect();
+    offX = e.clientX - r.left; offY = e.clientY - r.top;
+    fab.setPointerCapture(e.pointerId);
+  });
+  fab.addEventListener("pointermove", e => {
+    if (!dragging) return;
+    if (!moved && Math.hypot(e.clientX - startX, e.clientY - startY) > THRESHOLD) {
+      moved = true; fab.classList.add("dragging");
+    }
+    if (moved) clampAndPlace(e.clientX - offX, e.clientY - offY);
+  });
+  fab.addEventListener("pointerup", e => {
+    if (!dragging) return;
+    dragging = false;
+    fab.classList.remove("dragging");
+    if (moved) {
+      const r = fab.getBoundingClientRect();
+      store.set("karb.fabPos", { x: r.left, y: r.top });
+      toast("تم تثبيت مكان السلة");
+    } else {
+      openBasketPanel();          // نقرة عادية = فتح السلة
+    }
+    try { fab.releasePointerCapture(e.pointerId); } catch (_) {}
+  });
+  // أعِد ضبط الموضع لو تغيّر حجم النافذة حتى لا تختفي خارج الشاشة
+  window.addEventListener("resize", () => {
+    const r = fab.getBoundingClientRect();
+    if (fab.style.left) clampAndPlace(r.left, r.top);
+  });
+  applySaved();
+})();
 function renderBasketPanel() {
   const wrap = $("basketItems");
   wrap.innerHTML = !basket.length
@@ -1590,7 +1709,9 @@ $("basketItems").addEventListener("click", e => {
   const b = e.target.closest("[data-bdel]"); if (!b) return;
   basket.splice(+b.dataset.bdel, 1); persistBasket(); renderBasketBar(); renderBasketPanel();
 });
-$("openBasketBtn").onclick = () => { renderBasketPanel(); $("basketPanel").classList.add("open"); };
+/* الفتح يتم من منطق السحب (نقرة بلا تحريك) وليس عبر onclick،
+   حتى لا تُفتح السلة عن طريق الخطأ بعد سحبها. */
+function openBasketPanel() { renderBasketPanel(); $("basketPanel").classList.add("open"); }
 $("basketCloseBtn").onclick = () => $("basketPanel").classList.remove("open");
 $("basketPanel").addEventListener("click", e => { if (e.target === $("basketPanel")) $("basketPanel").classList.remove("open"); });
 $("basketClearBtn").onclick = () => {
@@ -1966,6 +2087,20 @@ $("resetBtn").onclick = () => {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
   show("login");
+
+  /* ---------- تذكُّر العميل: دخول تلقائي عند العودة ----------
+     نحفظ رمز العميل بعد أول دخول ناجح، وعند فتح التطبيق لاحقًا نتحقق منه
+     بصمت مع الخادم وندخله مباشرة. هذا يجنّبه كتابة الرمز في كل مرة.
+     يبقى التحقق على الخادم في كل مرة، فلو أوقفتَ الرمز أو انتهى، لا يدخل. */
+  const savedCode = state.customerCode;
+  if (savedCode && !new URLSearchParams(location.search).get("c")) {
+    setMsg("loginMsg", "جارٍ استعادة جلستك...", "");
+    const ok = await silentLogin(savedCode);
+    if (!ok) {
+      state.customerCode = ""; store.set(SKEY, state);
+      setMsg("loginMsg", "", "");
+    }
+  }
 
   /* رابط الدخول المباشر: ?c=CODE — نعبّئ الرمز وندخل تلقائيًا، ثم نزيله من شريط
      العنوان فورًا حتى لا يبقى ظاهرًا لمن ينظر للشاشة أو في سجل المتصفح. */
